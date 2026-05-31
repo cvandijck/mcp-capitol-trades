@@ -32,10 +32,10 @@ const TOOLS: Tool[] = [
           default: 10,
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: [],
@@ -53,10 +53,10 @@ const TOOLS: Tool[] = [
           description: "The politician name to search for (e.g., 'Nancy Pelosi', 'Michael').",
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: ["politician"],
@@ -74,10 +74,10 @@ const TOOLS: Tool[] = [
           description: "The ticker symbol or company/asset name (e.g., 'Apple', 'AAPL', 'VOO', 'Microsoft').",
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: ["symbol"],
@@ -96,10 +96,10 @@ const TOOLS: Tool[] = [
           default: 10,
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: [],
@@ -118,10 +118,10 @@ const TOOLS: Tool[] = [
           default: 5,
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: [],
@@ -157,10 +157,10 @@ const TOOLS: Tool[] = [
           default: [],
         },
         days: {
-          type: "number",
-          enum: [30, 90, 180, 365],
+          type: "string",
+          enum: ["30", "90", "180", "365"],
           description: "Number of days to look back for trades. Must be one of: 30, 90, 180, or 365 days",
-          default: 90,
+          default: "90",
         },
       },
       required: [],
@@ -197,6 +197,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       throw new Error("Arguments are required");
     }
 
+    const parseDaysArg = (daysArg: unknown): number => {
+      if (daysArg === undefined || daysArg === null) {
+        return 90;
+      }
+
+      const parsedDays =
+        typeof daysArg === "string"
+          ? Number.parseInt(daysArg, 10)
+          : typeof daysArg === "number"
+            ? daysArg
+            : NaN;
+
+      const allowedDays = [30, 90, 180, 365];
+      if (!Number.isFinite(parsedDays) || !allowedDays.includes(parsedDays)) {
+        throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
+      }
+
+      return parsedDays;
+    };
+
     switch (name) {
       case "get_politician_trades": {
         const symbol = args.symbol as string | null;
@@ -204,13 +224,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // Normalize party: undefined or null both become null
         const party = args.party === undefined || args.party === null ? null : (args.party as string);
         const type = (args.type as string[]) || [];
-        const days = (args.days as number) || 90;
-
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
+        const days = parseDaysArg(args.days);
 
         // Validate party - must be DEMOCRAT, REPUBLICAN, or null (treated as ALL)
         if (party !== null && party !== "DEMOCRAT" && party !== "REPUBLICAN") {
@@ -231,7 +245,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const result = await getPoliticianTrades(symbol, politician, party, type, days);
-        
+
         return {
           content: [
             {
@@ -244,13 +258,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_top_traded_assets": {
         const limit = (args.limit as number) || 10;
-        const days = (args.days as number) || 90;
-
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
+        const days = parseDaysArg(args.days);
 
         // Validate limit
         if (limit < 1 || limit > 50) {
@@ -258,7 +266,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const result = await getTopTradedAssets(limit, days);
-        
+
         return {
           content: [
             {
@@ -271,20 +279,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_politician_stats": {
         const politician = args.politician as string;
-        const days = (args.days as number) || 90;
+        const days = parseDaysArg(args.days);
 
         if (!politician) {
           throw new Error("politician is required");
         }
 
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
-
         const result = await getPoliticianStats(politician, days);
-        
+
         return {
           content: [
             {
@@ -297,20 +299,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_asset_stats": {
         const symbol = args.symbol as string;
-        const days = (args.days as number) || 90;
+        const days = parseDaysArg(args.days);
 
         if (!symbol) {
           throw new Error("symbol is required");
         }
 
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
-
         const result = await getAssetStats(symbol, days);
-        
+
         return {
           content: [
             {
@@ -323,13 +319,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_buy_momentum_assets": {
         const limit = (args.limit as number) || 10;
-        const days = (args.days as number) || 90;
-
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
+        const days = parseDaysArg(args.days);
 
         // Validate limit
         if (limit < 1 || limit > 50) {
@@ -337,7 +327,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const result = await getBuyMomentumAssets(limit, days);
-        
+
         return {
           content: [
             {
@@ -350,13 +340,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "get_party_buy_momentum": {
         const limit = (args.limit as number) || 5;
-        const days = (args.days as number) || 90;
-
-        // Validate that days is one of the allowed values
-        const allowedDays = [30, 90, 180, 365];
-        if (!allowedDays.includes(days)) {
-          throw new Error(`days must be one of: ${allowedDays.join(', ')}`);
-        }
+        const days = parseDaysArg(args.days);
 
         // Validate limit
         if (limit < 1 || limit > 20) {
@@ -364,7 +348,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const result = await getPartyBuyMomentum(limit, days);
-        
+
         return {
           content: [
             {
@@ -428,7 +412,7 @@ async function getPoliticianTrades(
     const allTypes = ["BUY", "SELL", "RECEIVE", "EXCHANGE"];
     const hasAllTypes = type.length === 4 && allTypes.every(t => type.includes(t));
     const isAll = type.length === 0 || hasAllTypes;
-    
+
     if (!isAll && type.length > 0) {
       // Join types with comma for multiple filters
       const typeParam = type.map(t => t.toLowerCase()).join(",");
@@ -440,12 +424,12 @@ async function getPoliticianTrades(
 
     // Construct the full URL
     const url = `${baseUrl}?${params.join("&")}`;
-    
+
     console.error(`Fetching politician trades from: ${url}`);
-    
+
     // Get politician trades (limit to 50 by default)
     const trades = await scrapePoliticianTrades(url, 50);
-    
+
     return {
       filters: {
         symbol: symbol || null,
@@ -469,7 +453,7 @@ async function getPoliticianTrades(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  
+
   console.error("MCP Capitol Trades Server running on stdio");
 }
 
