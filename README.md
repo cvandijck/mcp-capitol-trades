@@ -23,7 +23,7 @@ Choose **Option 1** for a quick start from npm, or **Option 2** to build from so
 ### Option 1: Install from npm (Recommended) ⭐
 
 ```bash
-npm install -g @anguslin/mcp-capitol-trades
+npm install -g @cvandijck/mcp-capitol-trades
 ```
 
 That's it! The package is installed globally.
@@ -35,7 +35,7 @@ That's it! The package is installed globally.
 If you want to build from source or contribute:
 
 ```bash
-git clone https://github.com/anguslin/mcp-capitol-trades
+git clone https://github.com/cvandijck/mcp-capitol-trades
 cd mcp-capitol-trades
 npm install
 npm run build
@@ -72,7 +72,7 @@ Configure Cursor/VS Code to use the MCP server.
     "mcp-capitol-trades": {
       "command": "node",
       "args": [
-       "C:/Users/anguslin/Projects/mcp-capitol-trades/build/src/index.js"
+       "C:/Users/cvandijck/Projects/mcp-capitol-trades/build/src/index.js"
       ]
     }
   }
