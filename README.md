@@ -1,3 +1,9 @@
+---
+
+This project is forked from the original [mcp-capitol-trades](https://github.com/anguslin/mcp-capitol-trades) by **anguslin**. A reproduction is made to explore and experiment with the codebase, and to make modifications as needed. All credits for the original work go to the original author. This fork is intended for experimental purposes, and may contain changes that differ from the original project.
+
+---
+
 # MCP Capitol Trades Server
 
 A Model Context Protocol (MCP) server that extracts politician stock trades with prices from [Capitol Trades](https://www.capitoltrades.com/). Get detailed trade information including politicians, dates, transaction types, sizes, and prices. No API Key required.
